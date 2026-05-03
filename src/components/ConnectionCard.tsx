@@ -38,7 +38,7 @@ export function ConnectionCard({
   theme = "light",
   className,
 }: ConnectionCardProps): React.ReactElement {
-  const { connection } = useConnection(slug);
+  const { connection, status } = useConnection(slug);
   const { integrations } = useIntegrations();
   const { connect, disconnect } = useConnect();
   const ctx = useContext(PortalContext);
@@ -130,6 +130,27 @@ export function ConnectionCard({
   ]
     .filter(Boolean)
     .join(" ");
+
+  // Standalone-card loading state. When a card is rendered outside <ConnectPortal>
+  // (e.g. <ConnectionCard slug="telegram" />), it has no parent skeleton to
+  // mask the in-flight provider fetch — render a self-contained skeleton
+  // until the catalog lands. Inside the portal grid this never trips because
+  // ConnectPortal returns its own skeleton grid first.
+  if (status === "loading") {
+    return (
+      <div
+        className={`${cardClasses} vendo-connect-card--skeleton`}
+        aria-busy="true"
+      >
+        <div className="vendo-connect-card__logo-skeleton" aria-hidden />
+        <div className="vendo-connect-card__info">
+          <div className="vendo-skeleton-line vendo-skeleton-line--name" />
+          <div className="vendo-skeleton-line vendo-skeleton-line--badge" />
+        </div>
+        <div className="vendo-skeleton-line vendo-skeleton-line--cta" />
+      </div>
+    );
+  }
 
   return (
     <div className={cardClasses}>
