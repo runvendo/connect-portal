@@ -67,7 +67,13 @@ export function ConnectionCard({
       ? connection.displayName
       : null;
 
-  const logoUrl = connection?.logoUrl ?? integration?.logoUrl ?? null;
+  // integration.logoUrl is the SDK-facing public source of truth (DB-backed).
+  // connection.logoUrl is a per-instance copy populated server-side from the
+  // static dashboard catalog — it goes stale when the catalog changes and is
+  // sometimes empty/whitespace, so prefer the integration value when present.
+  const trim = (s: string | null | undefined): string | null =>
+    s && s.trim() ? s : null;
+  const logoUrl = trim(integration?.logoUrl) ?? trim(connection?.logoUrl) ?? null;
 
   const logoEl = customLogo ?? (
     logoUrl ? (
