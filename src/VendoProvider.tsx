@@ -103,12 +103,26 @@ export function VendoProvider({ client, children, sseTransport }: VendoProviderP
 
     async function load(): Promise<void> {
       try {
-        const [connections, integrations, balance, caps] = await Promise.all([
+        // Connections + integrations are required to render the portal.
+        // Billing data is best-effort: a missing spend-caps endpoint or an
+        // unfunded tenant should not blank out the whole UI.
+        const [connections, integrations, billingResults] = await Promise.all([
           client.connections.list(),
           client.integrations.list(),
-          client.billing.balance(),
-          client.billing.spendCaps(),
+          Promise.allSettled([
+            client.billing.balance(),
+            client.billing.spendCaps(),
+          ]),
         ]);
+        const [balanceResult, capsResult] = billingResults;
+        const balance = balanceResult.status === "fulfilled" ? balanceResult.value : null;
+        const caps = capsResult.status === "fulfilled" ? capsResult.value : null;
+        if (balanceResult.status === "rejected") {
+          console.warn("[VendoProvider] billing.balance failed:", balanceResult.reason);
+        }
+        if (capsResult.status === "rejected") {
+          console.warn("[VendoProvider] billing.spendCaps failed:", capsResult.reason);
+        }
         if (!cancelled) {
           dispatch({ type: "LOADED", connections, integrations, balance, caps });
         }
