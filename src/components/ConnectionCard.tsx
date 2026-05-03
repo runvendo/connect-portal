@@ -73,12 +73,7 @@ export function ConnectionCard({
   // sometimes empty/whitespace, so prefer the integration value when present.
   const trim = (s: string | null | undefined): string | null =>
     s && s.trim() ? s : null;
-  const rawLogoUrl = trim(integration?.logoUrl) ?? trim(connection?.logoUrl) ?? null;
-  // simple-icons CDN serves mono-color marks via /<slug>/<hex>. The DB seeds
-  // a fixed hex per logo, which means a black mark is invisible on the dark
-  // theme card and a white mark is invisible on the light card. Rewrite the
-  // color based on theme so both surfaces are readable.
-  const logoUrl = rawLogoUrl ? themedSimpleIconsUrl(rawLogoUrl, theme) : null;
+  const logoUrl = trim(integration?.logoUrl) ?? trim(connection?.logoUrl) ?? null;
 
   const logoEl = customLogo ?? (
     logoUrl ? (
@@ -330,20 +325,6 @@ function Logo({ url, alt }: { url: string; alt: string }): React.ReactElement {
       ) : null}
     </div>
   );
-}
-
-/** Rewrite a simple-icons CDN URL to use a theme-appropriate color so mono-
- *  color marks remain visible across light/beige/dark surfaces. Other URLs
- *  (Composio brand marks, custom SVGs) pass through unchanged. */
-function themedSimpleIconsUrl(url: string, theme: "light" | "beige" | "dark"): string {
-  const m = url.match(/^(https?:\/\/cdn\.simpleicons\.org\/[^/]+)\/([0-9A-Fa-f]{3,8})(\?.*)?$/);
-  if (!m) return url;
-  const [, base, , query] = m;
-  // Pure black on light/beige, pure white on dark. Pure white can wash out
-  // some light-mark icons (e.g. ElevenLabs); call this out as a follow-up
-  // when adding a "soft" mode to the API.
-  const color = theme === "dark" ? "FFFFFF" : "000000";
-  return `${base}/${color}${query ?? ""}`;
 }
 
 function Spinner(): React.ReactElement {

@@ -26,7 +26,14 @@ export function App(): React.ReactElement {
   // fetch.bind(window) — without it, the SDK's `this.fetch(...)` throws
   // "Illegal invocation" because fetch needs window as receiver.
   const client = useMemo(
-    () => new Vendo({ apiKey, baseUrl, fetch: window.fetch.bind(window) }),
+    () =>
+      new Vendo({
+        apiKey,
+        baseUrl,
+        // Optional ?slow=N query param simulates a slow network so the loading
+        // skeleton is visible during dev. No-op when not set.
+        fetch: makeFetch(window.location.search),
+      }),
     [],
   );
 
@@ -149,6 +156,17 @@ function themeText(theme: Theme): string {
 
 function themeMuted(theme: Theme): string {
   return theme === "dark" ? "#C1B7AB" : "#6B6B65";
+}
+
+function makeFetch(search: string): typeof fetch {
+  const params = new URLSearchParams(search);
+  const slowMs = parseInt(params.get("slow") ?? "0", 10);
+  const base = window.fetch.bind(window);
+  if (!slowMs || Number.isNaN(slowMs)) return base;
+  return (input, init) =>
+    new Promise((resolve, reject) =>
+      setTimeout(() => base(input, init).then(resolve, reject), slowMs),
+    );
 }
 
 function getSlugParam(name: string): string | null {
