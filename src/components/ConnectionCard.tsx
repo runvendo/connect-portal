@@ -18,6 +18,10 @@ interface ConnectionCardProps {
   customLogo?: React.ReactNode;
   /** Passed to connect() and the dashboard popup. */
   returnTo?: string;
+  /** Built-in theme preset. Defaults to "light"; pass "beige" or "dark"
+   *  for the other Vendo presets. Inherits from a wrapping <ConnectPortal>
+   *  if rendered inside one. */
+  theme?: "light" | "beige" | "dark";
   className?: string;
 }
 
@@ -31,6 +35,7 @@ export function ConnectionCard({
   compact,
   customLogo,
   returnTo,
+  theme = "light",
   className,
 }: ConnectionCardProps): React.ReactElement {
   const { connection } = useConnection(slug);
@@ -118,6 +123,7 @@ export function ConnectionCard({
   const cardClasses = [
     "vendo-connect-card",
     compact ? "vendo-connect-card--compact" : undefined,
+    theme !== "light" ? `vendo-theme-${theme}` : undefined,
     className,
   ]
     .filter(Boolean)

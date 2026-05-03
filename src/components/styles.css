@@ -4,36 +4,99 @@
 /*
  * Tokens are scoped to the package's own class selectors instead of :root so
  * they don't override host-side --vendo-* variables or pollute the global
- * cascade. A host can still override per-component by setting the same vars
- * on a wrapper element around any of these classes.
+ * cascade.
+ *
+ * Default ("light") matches Vendo's brand: malachite-green primary, neutral
+ * grayscale, system fonts. Two additional presets — "beige" (Vendo's
+ * signature parchment look) and "dark" — are layered as class-scoped
+ * overrides further down. Hosts can:
+ *   1. Choose a preset:    <ConnectPortal theme="beige" />
+ *   2. Wrap with a class:  <div class="vendo-theme-dark"><ConnectPortal /></div>
+ *   3. Override any token: set --vendo-* on a wrapper element.
  */
 
 .vendo-portal,
 .vendo-connect-card,
 .vendo-connect-btn,
 .vendo-manage-btn {
-  --vendo-color-brand: #6B4FFF;
-  --vendo-color-bg: white;
-  --vendo-color-bg-muted: #f8f8fa;
-  --vendo-color-border: #e5e5ea;
-  --vendo-color-text: #1a1a1a;
-  --vendo-color-text-muted: #666;
-  /* Success/warning/error are reserved for icon dots and badges — not body text,
-     since success-on-white (~3:1) falls short of WCAG AA for body copy. */
-  --vendo-color-success: #10b981;
-  --vendo-color-warning: #f59e0b;
-  --vendo-color-error: #ef4444;
+  /* Brand — Vendo Malachite Green */
+  --vendo-color-brand: #2B7A5E;
+  --vendo-color-on-brand: #FAF7F2;
+
+  /* Surfaces */
+  --vendo-color-bg: #FFFFFF;
+  --vendo-color-bg-muted: #F6F4F2;
+  --vendo-color-border: #E6DDD0;
+
+  /* Text */
+  --vendo-color-text: #1C1B18;
+  --vendo-color-text-muted: #6B6B65;
+
+  /* Status — icon dots and badges only (contrast-too-low for body copy) */
+  --vendo-color-success: #3A8B52;
+  --vendo-color-warning: #C4922A;
+  --vendo-color-error: #C44B3B;
+
+  /* Geometry */
   --vendo-radius: 12px;
   --vendo-radius-sm: 8px;
-  --vendo-font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --vendo-font-family: 'Red Hat Display', system-ui, -apple-system, "Segoe UI", sans-serif;
   --vendo-card-padding: 16px;
   --vendo-card-padding-compact: 12px;
   --vendo-spacing-xs: 4px;
   --vendo-spacing-sm: 8px;
   --vendo-spacing-md: 12px;
   --vendo-spacing-lg: 16px;
-  --vendo-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --vendo-color-on-brand: #fff;
+  --vendo-shadow-sm: 0 1px 2px 0 rgba(48, 42, 36, 0.04);
+}
+
+/* ── Theme: beige (Vendo signature parchment) ──────────────────────────────── */
+/*
+ * Card surfaces stay white but the grid background warms to parchment,
+ * borders go softer, and text drops to pure black for stronger contrast on
+ * the warm bg. Used by Vendo's own marketing site.
+ */
+
+.vendo-theme-beige.vendo-portal,
+.vendo-theme-beige .vendo-portal,
+.vendo-theme-beige.vendo-connect-card,
+.vendo-theme-beige .vendo-connect-card,
+.vendo-theme-beige.vendo-connect-btn,
+.vendo-theme-beige .vendo-connect-btn,
+.vendo-theme-beige.vendo-manage-btn,
+.vendo-theme-beige .vendo-manage-btn {
+  --vendo-color-bg: #FFFFFF;
+  --vendo-color-bg-muted: #FAF7F2;
+  --vendo-color-border: #E6DDD0;
+  --vendo-color-text: #000000;
+  --vendo-color-text-muted: #4E4D49;
+}
+
+/* ── Theme: dark ───────────────────────────────────────────────────────────── */
+
+.vendo-theme-dark.vendo-portal,
+.vendo-theme-dark .vendo-portal,
+.vendo-theme-dark.vendo-connect-card,
+.vendo-theme-dark .vendo-connect-card,
+.vendo-theme-dark.vendo-connect-btn,
+.vendo-theme-dark .vendo-connect-btn,
+.vendo-theme-dark.vendo-manage-btn,
+.vendo-theme-dark .vendo-manage-btn {
+  /* Lighter malachite for contrast on dark surfaces */
+  --vendo-color-brand: #4D9E7C;
+  --vendo-color-on-brand: #0A1E18;
+
+  --vendo-color-bg: #1C1B18;
+  --vendo-color-bg-muted: #000000;
+  --vendo-color-border: #35342F;
+  --vendo-color-text: #FAF7F2;
+  --vendo-color-text-muted: #C1B7AB;
+
+  --vendo-color-success: #4D9E7C;
+  --vendo-color-warning: #DBA83A;
+  --vendo-color-error: #E16D5A;
+
+  --vendo-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
 }
 
 /* ── Connection card ────────────────────────────────────────────────────────── */
@@ -194,6 +257,17 @@
 .vendo-portal {
   font-family: var(--vendo-font-family);
   color: var(--vendo-color-text);
+}
+
+/* When a theme preset is active, paint the container surface so the theme is
+ * visible standalone (without forcing the host page background to match).
+ * Hosts who want a flush, host-bg-bleed look can pass theme="light" (default)
+ * or override --vendo-color-bg-muted on a wrapper. */
+.vendo-portal.vendo-theme-beige,
+.vendo-portal.vendo-theme-dark {
+  background: var(--vendo-color-bg-muted);
+  padding: var(--vendo-spacing-lg);
+  border-radius: var(--vendo-radius);
 }
 
 .vendo-portal__search-wrap {

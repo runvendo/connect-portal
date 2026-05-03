@@ -7,6 +7,10 @@ import { ConnectionCard } from "./ConnectionCard.js";
 /** The `category` string union used to filter groups. Matches Integration.category. */
 export type Category = string;
 
+/** Built-in theme presets. Override individual tokens via CSS custom properties
+ *  on a wrapper element for finer control. */
+export type Theme = "light" | "beige" | "dark";
+
 export interface ConnectPortalProps {
   /** Filter to these categories only. Default: show all groups. */
   categories?: Category[];
@@ -14,6 +18,9 @@ export interface ConnectPortalProps {
   showSearch?: boolean;
   /** Card layout. Default: "grid". */
   layout?: "grid" | "list";
+  /** Built-in theme preset. Default: "light". For custom palettes, set
+   *  --vendo-color-* CSS custom properties on a wrapper element. */
+  theme?: Theme;
   className?: string;
   /** Forwarded to each ConnectionCard. */
   onConnected?: (conn: Connection) => void;
@@ -45,6 +52,7 @@ export function ConnectPortal({
   categories,
   showSearch = true,
   layout = "grid",
+  theme = "light",
   className,
   onConnected,
   onDisconnected,
@@ -158,6 +166,7 @@ export function ConnectPortal({
   const rootClass = [
     "vendo-portal",
     `vendo-portal--${layout}`,
+    theme !== "light" ? `vendo-theme-${theme}` : null,
     className,
   ]
     .filter(Boolean)

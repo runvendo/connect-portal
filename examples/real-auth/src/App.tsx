@@ -1,10 +1,11 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Vendo } from "@vendodev/sdk";
 import {
   VendoProvider,
   ConnectPortal,
   ConnectionCard,
   ConnectButton,
+  type Theme,
 } from "@vendodev/connect-portal";
 
 const apiKey = import.meta.env.VITE_VENDO_API_KEY;
@@ -29,35 +30,45 @@ export function App(): React.ReactElement {
     [],
   );
 
+  const [theme, setTheme] = useState<Theme>("light");
+
   return (
     <VendoProvider client={client}>
-      <div style={styles.page}>
+      <div style={{ ...styles.page, ...themePageStyle(theme) }}>
         <header style={styles.header}>
-          <h1 style={styles.h1}>connect-portal — real auth playground</h1>
-          <p style={styles.subtitle}>
+          <h1 style={{ ...styles.h1, color: themeText(theme) }}>
+            connect-portal — real auth playground
+          </h1>
+          <p style={{ ...styles.subtitle, color: themeMuted(theme) }}>
             Live data from <code>{baseUrl}</code>. Edits in <code>../../src/</code>{" "}
             hot-reload here.
           </p>
+          <ThemeSwitcher value={theme} onChange={setTheme} />
         </header>
 
-        <section style={styles.section}>
-          <h2 style={styles.h2}>ConnectPortal</h2>
-          <ConnectPortal returnTo={window.location.href} />
+        <section style={{ ...styles.section, ...themeSectionStyle(theme) }}>
+          <h2 style={{ ...styles.h2, color: themeText(theme) }}>ConnectPortal</h2>
+          <ConnectPortal theme={theme} returnTo={window.location.href} />
         </section>
 
-        <section style={styles.section}>
-          <h2 style={styles.h2}>ConnectionCard — single integration</h2>
-          <p style={styles.desc}>
+        <section style={{ ...styles.section, ...themeSectionStyle(theme) }}>
+          <h2 style={{ ...styles.h2, color: themeText(theme) }}>
+            ConnectionCard — single integration
+          </h2>
+          <p style={{ ...styles.desc, color: themeMuted(theme) }}>
             Slug from <code>?card=</code> query (defaults to <code>telegram</code>).
           </p>
           <ConnectionCard
+            theme={theme}
             slug={getSlugParam("card") ?? "telegram"}
             returnTo={window.location.href}
           />
         </section>
 
-        <section style={styles.section}>
-          <h2 style={styles.h2}>ConnectButton — bare CTA</h2>
+        <section style={{ ...styles.section, ...themeSectionStyle(theme) }}>
+          <h2 style={{ ...styles.h2, color: themeText(theme) }}>
+            ConnectButton — bare CTA
+          </h2>
           <ConnectButton
             slug={getSlugParam("button") ?? "telegram"}
             returnTo={window.location.href}
@@ -68,6 +79,76 @@ export function App(): React.ReactElement {
       </div>
     </VendoProvider>
   );
+}
+
+function ThemeSwitcher({
+  value,
+  onChange,
+}: {
+  value: Theme;
+  onChange: (t: Theme) => void;
+}): React.ReactElement {
+  const themes: { id: Theme; label: string }[] = [
+    { id: "light", label: "Light" },
+    { id: "beige", label: "Beige" },
+    { id: "dark", label: "Dark" },
+  ];
+  return (
+    <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.75rem" }}>
+      {themes.map((t) => {
+        const active = value === t.id;
+        return (
+          <button
+            key={t.id}
+            type="button"
+            onClick={() => onChange(t.id)}
+            style={{
+              padding: "0.3rem 0.7rem",
+              fontSize: "0.8rem",
+              fontFamily: "inherit",
+              border: `1px solid ${active ? "#2B7A5E" : "#d8d2c9"}`,
+              borderRadius: "999px",
+              background: active ? "#2B7A5E" : "transparent",
+              color: active ? "#FAF7F2" : themeText(value),
+              cursor: "pointer",
+            }}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function themePageStyle(theme: Theme): React.CSSProperties {
+  switch (theme) {
+    case "beige":
+      return { background: "#FAF7F2" };
+    case "dark":
+      return { background: "#000000" };
+    default:
+      return { background: "#FFFFFF" };
+  }
+}
+
+function themeSectionStyle(theme: Theme): React.CSSProperties {
+  switch (theme) {
+    case "dark":
+      return { background: "#1C1B18", border: "1px solid #35342F" };
+    case "beige":
+      return { background: "#FFFFFF", border: "1px solid #E6DDD0" };
+    default:
+      return { background: "#FFFFFF", border: "1px solid #e5e5ea" };
+  }
+}
+
+function themeText(theme: Theme): string {
+  return theme === "dark" ? "#FAF7F2" : "#1C1B18";
+}
+
+function themeMuted(theme: Theme): string {
+  return theme === "dark" ? "#C1B7AB" : "#6B6B65";
 }
 
 function getSlugParam(name: string): string | null {
