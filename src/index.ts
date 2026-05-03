@@ -24,7 +24,7 @@ export { useIntegrations } from "./hooks/useIntegrations.js";
 // State-aware components — drop-in connection management UI
 /** Full grid/list of all integration cards with search, grouping, and theming. */
 export { ConnectPortal } from "./components/ConnectPortal.js";
-export type { ConnectPortalProps, Category } from "./components/ConnectPortal.js";
+export type { ConnectPortalProps, Category, Theme } from "./components/ConnectPortal.js";
 /** State-aware card that renders the correct CTA for each connection status. */
 export { ConnectionCard } from "./components/ConnectionCard.js";
 /** Bare connect CTA — use inside onboarding flows or deploy modals. */
