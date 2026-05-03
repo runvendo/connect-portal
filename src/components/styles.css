@@ -72,6 +72,23 @@
   --vendo-color-text-muted: #4E4D49;
 }
 
+/* In dark mode, fixed-color logos (Composio brand marks, local SVGs) hide
+ * against the dark card. Sit them on a soft parchment tile that gives any
+ * logo enough contrast without recoloring it. simple-icons URLs are still
+ * recolored at the source (FFFFFF for dark) so they read directly on the
+ * card without the tile being noticeable. */
+.vendo-theme-dark .vendo-connect-card__logo-wrap,
+.vendo-theme-dark .vendo-connect-card > img.vendo-connect-card__logo {
+  background: #FAF7F2;
+  border-radius: var(--vendo-radius-sm);
+}
+
+.vendo-theme-dark .vendo-connect-card__logo-wrap > .vendo-connect-card__logo,
+.vendo-theme-dark .vendo-connect-card > img.vendo-connect-card__logo {
+  padding: 4px;
+  box-sizing: border-box;
+}
+
 /* ── Theme: dark ───────────────────────────────────────────────────────────── */
 
 .vendo-theme-dark.vendo-portal,
@@ -127,12 +144,55 @@
   }
 }
 
+.vendo-connect-card__logo-wrap {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
 .vendo-connect-card__logo {
   width: 40px;
   height: 40px;
   flex-shrink: 0;
   object-fit: contain;
   border-radius: var(--vendo-radius-sm);
+  transition: opacity 120ms ease-out;
+}
+
+.vendo-connect-card__logo-wrap > .vendo-connect-card__logo {
+  position: absolute;
+  inset: 0;
+}
+
+.vendo-connect-card__logo-skeleton {
+  position: absolute;
+  inset: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--vendo-radius-sm);
+  background: var(--vendo-color-bg-muted);
+  overflow: hidden;
+}
+
+.vendo-connect-card__logo-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--vendo-color-text) 6%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: vendo-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes vendo-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
 }
 
 .vendo-connect-card__info {
@@ -350,6 +410,74 @@
   .vendo-portal--grid .vendo-portal__cards {
     grid-template-columns: 1fr;
   }
+}
+
+/* ── Skeleton (loading) state ──────────────────────────────────────────────── */
+
+.vendo-connect-card--skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
+.vendo-skeleton-line {
+  background: var(--vendo-color-bg-muted);
+  border-radius: var(--vendo-radius-sm);
+  position: relative;
+  overflow: hidden;
+}
+
+.vendo-skeleton-line::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--vendo-color-text) 6%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: vendo-shimmer 1.4s ease-in-out infinite;
+}
+
+.vendo-skeleton-line--name {
+  height: 14px;
+  width: 60%;
+  margin-bottom: var(--vendo-spacing-sm);
+}
+
+.vendo-skeleton-line--badge {
+  height: 10px;
+  width: 40%;
+}
+
+.vendo-skeleton-line--cta {
+  height: 32px;
+  width: 80px;
+  flex-shrink: 0;
+}
+
+.vendo-portal__search--skeleton {
+  height: 36px;
+  width: 100%;
+  border: none;
+  background: var(--vendo-color-bg-muted);
+  position: relative;
+  overflow: hidden;
+}
+
+.vendo-portal__search--skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--vendo-color-text) 6%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: vendo-shimmer 1.4s ease-in-out infinite;
 }
 
 /* ── Empty state ────────────────────────────────────────────────────────────── */
