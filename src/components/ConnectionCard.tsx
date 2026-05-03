@@ -73,15 +73,16 @@ export function ConnectionCard({
   // sometimes empty/whitespace, so prefer the integration value when present.
   const trim = (s: string | null | undefined): string | null =>
     s && s.trim() ? s : null;
-  const logoUrl = trim(integration?.logoUrl) ?? trim(connection?.logoUrl) ?? null;
+  const rawLogoUrl = trim(integration?.logoUrl) ?? trim(connection?.logoUrl) ?? null;
+  // simple-icons CDN serves mono-color marks via /<slug>/<hex>. The DB seeds
+  // a fixed hex per logo, which means a black mark is invisible on the dark
+  // theme card and a white mark is invisible on the light card. Rewrite the
+  // color based on theme so both surfaces are readable.
+  const logoUrl = rawLogoUrl ? themedSimpleIconsUrl(rawLogoUrl, theme) : null;
 
   const logoEl = customLogo ?? (
     logoUrl ? (
-      <img
-        src={logoUrl}
-        alt={`${providerName} logo`}
-        className="vendo-connect-card__logo"
-      />
+      <Logo url={logoUrl} alt={`${providerName} logo`} />
     ) : (
       <div className="vendo-connect-card__logo" aria-hidden />
     )
@@ -299,6 +300,50 @@ function SecondaryAction({
     default:
       return null;
   }
+}
+
+/** Show a skeleton box until the logo image finishes loading or errors. */
+function Logo({ url, alt }: { url: string; alt: string }): React.ReactElement {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+  // Reset state when the URL changes (e.g. theme switch swaps the simple-icons
+  // color). Without this the cached `loaded=true` keeps the old src visible
+  // until the new image swaps in, and `errored` from one URL persists.
+  useEffect(() => {
+    setLoaded(false);
+    setErrored(false);
+  }, [url]);
+  return (
+    <div className="vendo-connect-card__logo-wrap" aria-hidden={errored}>
+      {!loaded && !errored ? (
+        <div className="vendo-connect-card__logo-skeleton" aria-hidden />
+      ) : null}
+      {!errored ? (
+        <img
+          src={url}
+          alt={alt}
+          className="vendo-connect-card__logo"
+          style={{ opacity: loaded ? 1 : 0 }}
+          onLoad={() => setLoaded(true)}
+          onError={() => setErrored(true)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+/** Rewrite a simple-icons CDN URL to use a theme-appropriate color so mono-
+ *  color marks remain visible across light/beige/dark surfaces. Other URLs
+ *  (Composio brand marks, custom SVGs) pass through unchanged. */
+function themedSimpleIconsUrl(url: string, theme: "light" | "beige" | "dark"): string {
+  const m = url.match(/^(https?:\/\/cdn\.simpleicons\.org\/[^/]+)\/([0-9A-Fa-f]{3,8})(\?.*)?$/);
+  if (!m) return url;
+  const [, base, , query] = m;
+  // Pure black on light/beige, pure white on dark. Pure white can wash out
+  // some light-mark icons (e.g. ElevenLabs); call this out as a follow-up
+  // when adding a "soft" mode to the API.
+  const color = theme === "dark" ? "FFFFFF" : "000000";
+  return `${base}/${color}${query ?? ""}`;
 }
 
 function Spinner(): React.ReactElement {

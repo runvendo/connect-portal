@@ -58,7 +58,7 @@ export function ConnectPortal({
   onDisconnected,
   returnTo,
 }: ConnectPortalProps): React.ReactElement {
-  const { integrations } = useIntegrations();
+  const { integrations, status } = useIntegrations();
   const { connections } = useConnections();
   const [rawSearch, setRawSearch] = useState("");
   const [search, setSearch] = useState("");
@@ -172,6 +172,37 @@ export function ConnectPortal({
     .filter(Boolean)
     .join(" ");
 
+  // Render skeleton cards while the provider is still fetching the catalog.
+  // Avoids a single jumpy paint when integrations land — keeps the layout
+  // shape stable and gives consumers a clear "loading" affordance.
+  if (status === "loading") {
+    return (
+      <div className={rootClass} role="region" aria-label="Vendo connections" aria-busy="true">
+        {showSearch && (
+          <div className="vendo-portal__search-wrap">
+            <div className="vendo-portal__search-row">
+              <div className="vendo-portal__search vendo-portal__search--skeleton" aria-hidden />
+            </div>
+          </div>
+        )}
+        <ul className="vendo-portal__cards" role="list">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <li key={i}>
+              <div className="vendo-connect-card vendo-connect-card--skeleton" aria-hidden>
+                <div className="vendo-connect-card__logo-skeleton" />
+                <div className="vendo-connect-card__info">
+                  <div className="vendo-skeleton-line vendo-skeleton-line--name" />
+                  <div className="vendo-skeleton-line vendo-skeleton-line--badge" />
+                </div>
+                <div className="vendo-skeleton-line vendo-skeleton-line--cta" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+
   return (
     <div className={rootClass} role="region" aria-label="Vendo connections">
       {showSearch && (
@@ -230,6 +261,7 @@ export function ConnectPortal({
                   <ConnectionCard
                     slug={slug}
                     compact={layout === "list"}
+                    theme={theme}
                     returnTo={returnTo}
                     onConnected={onConnected}
                     onDisconnected={onDisconnected}
