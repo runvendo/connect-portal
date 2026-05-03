@@ -46,8 +46,12 @@ const NON_AVAILABLE_STATUSES = new Set([
   "connecting",
 ]);
 
-/** Title-case a category string for display. */
+/** Title-case a category for display, but uppercase well-known acronyms.
+ *  The DB seeds lowercase ("ai", "communication", "voice", "other"); a
+ *  generic title-case yields "Ai" which reads as a typo. */
+const ACRONYM_CATEGORIES = new Set(["ai", "api", "ml", "ai-ml", "ai_ml"]);
 function titleCase(s: string): string {
+  if (ACRONYM_CATEGORIES.has(s.toLowerCase())) return s.toUpperCase();
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
