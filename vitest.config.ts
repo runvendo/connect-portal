@@ -7,5 +7,9 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./tests/setup.ts"],
     globals: true,
+    // forks pool isolates each test file in its own process. Avoids vitest worker-thread
+    // scheduling deadlocks with vi.useFakeTimers() under Linux CI (the issue spreads from
+    // popup tests to fetchTransport tests on threads pool but disappears with forks).
+    pool: "forks",
   },
 });
