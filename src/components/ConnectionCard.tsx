@@ -53,8 +53,14 @@ export function ConnectionCard({
     !connection || connection.status === "available" ? "available" : connection.status;
   const effectiveStatus = inFlight ? "connecting" : serverStatus;
 
-  const displayName =
-    connection?.displayName ?? integration?.name ?? slug;
+  // Primary label is the provider/integration name (stable, recognizable).
+  // The user-chosen connection nickname renders as subtext below, only when
+  // it differs from the provider name (avoids "OpenAI / OpenAI" duplication).
+  const providerName = integration?.name ?? slug;
+  const connectionLabel =
+    connection?.displayName && connection.displayName !== providerName
+      ? connection.displayName
+      : null;
 
   const logoUrl = connection?.logoUrl ?? integration?.logoUrl ?? null;
 
@@ -62,7 +68,7 @@ export function ConnectionCard({
     logoUrl ? (
       <img
         src={logoUrl}
-        alt={`${displayName} logo`}
+        alt={`${providerName} logo`}
         className="vendo-connect-card__logo"
       />
     ) : (
@@ -121,7 +127,10 @@ export function ConnectionCard({
     <div className={cardClasses}>
       {logoEl}
       <div className="vendo-connect-card__info">
-        <div className="vendo-connect-card__name">{displayName}</div>
+        <div className="vendo-connect-card__name">{providerName}</div>
+        {connectionLabel ? (
+          <div className="vendo-connect-card__nickname">{connectionLabel}</div>
+        ) : null}
         <StatusBadge status={effectiveStatus} errorMessage={connection?.errorMessage ?? null} />
       </div>
       <div className="vendo-connect-card__actions">
