@@ -16,11 +16,18 @@ export interface ConnectPortalProps {
   categories?: Category[];
   /** Show the search input. Default: true. */
   showSearch?: boolean;
+  /** Show the category filter pill row. Default: true. Filters override one
+   *  another (single-select); set false to render all categories at once. */
+  showCategoryFilter?: boolean;
   /** Card layout. Default: "grid". */
   layout?: "grid" | "list";
   /** Built-in theme preset. Default: "light". For custom palettes, set
    *  --vendo-color-* CSS custom properties on a wrapper element. */
   theme?: Theme;
+  /** Initial number of cards rendered per group. Groups with more than this
+   *  many slugs render a "Show all N" toggle instead of dumping the full
+   *  list. Pass 0 to disable pagination (render all). Default: 6. */
+  pageSize?: number;
   className?: string;
   /** Forwarded to each ConnectionCard. */
   onConnected?: (conn: Connection) => void;
@@ -51,8 +58,10 @@ function titleCase(s: string): string {
 export function ConnectPortal({
   categories,
   showSearch = true,
+  showCategoryFilter = true,
   layout = "grid",
   theme = "light",
+  pageSize = 6,
   className,
   onConnected,
   onDisconnected,
@@ -62,6 +71,14 @@ export function ConnectPortal({
   const { connections } = useConnections();
   const [rawSearch, setRawSearch] = useState("");
   const [search, setSearch] = useState("");
+  // Single-select category filter: null = show all groups. Pill row drives this.
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  // Per-category set of categories whose "Show all" has been clicked. Tracked
+  // here (not inside Group) so collapse/expand persists across re-renders
+  // when search debounces.
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(
+    () => new Set(),
+  );
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Ref for returning focus to the search input after Clear is clicked.
   const inputRef = useRef<HTMLInputElement>(null);
@@ -107,11 +124,29 @@ export function ConnectPortal({
     return map;
   }, [allSlugs, slugsFromCatalog, connectionBySlug]);
 
-  // Filter to requested categories
-  const categoryKeys = useMemo(() => {
+  // Filter to requested categories. The `categories` prop scopes which groups
+  // are eligible at all; the activeCategory pill UI then filters that subset
+  // further to one selected group.
+  const allowedCategories = useMemo(() => {
     const keys = Array.from(grouped.keys()).sort();
     return categories ? keys.filter((k) => categories.includes(k)) : keys;
   }, [grouped, categories]);
+
+  // Reset the active filter if it ever points at a group that isn't allowed
+  // anymore (e.g. consumer narrowed the categories prop).
+  useEffect(() => {
+    if (activeCategory && !allowedCategories.includes(activeCategory)) {
+      setActiveCategory(null);
+    }
+  }, [activeCategory, allowedCategories]);
+
+  const categoryKeys = useMemo(
+    () =>
+      activeCategory
+        ? allowedCategories.filter((k) => k === activeCategory)
+        : allowedCategories,
+    [allowedCategories, activeCategory],
+  );
 
   // Build visible groups after search + category filter.
   // sortSlugs and matchesSearch are closures defined inside the memo so the
@@ -235,6 +270,32 @@ export function ConnectPortal({
         </div>
       )}
 
+      {showCategoryFilter && allowedCategories.length > 1 && (
+        <div className="vendo-portal__filter" role="tablist" aria-label="Filter by category">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeCategory === null}
+            className={`vendo-portal__filter-pill${activeCategory === null ? " vendo-portal__filter-pill--active" : ""}`}
+            onClick={() => setActiveCategory(null)}
+          >
+            All
+          </button>
+          {allowedCategories.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              role="tab"
+              aria-selected={activeCategory === cat}
+              className={`vendo-portal__filter-pill${activeCategory === cat ? " vendo-portal__filter-pill--active" : ""}`}
+              onClick={() => setActiveCategory(cat)}
+            >
+              {titleCase(cat)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {isEmpty ? (
         <div className="vendo-portal__empty">
           {/* rawSearch (not the debounced value) reflects what the user typed right now. */}
@@ -252,25 +313,67 @@ export function ConnectPortal({
           </button>
         </div>
       ) : (
-        visibleGroups.map(({ cat, slugs }) => (
-          <section key={cat} className="vendo-portal__group">
-            <h3 className="vendo-portal__group-title">{titleCase(cat)}</h3>
-            <ul className="vendo-portal__cards" role="list">
-              {slugs.map((slug) => (
-                <li key={slug}>
-                  <ConnectionCard
-                    slug={slug}
-                    compact={layout === "list"}
-                    theme={theme}
-                    returnTo={returnTo}
-                    onConnected={onConnected}
-                    onDisconnected={onDisconnected}
-                  />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ))
+        visibleGroups.map(({ cat, slugs }) => {
+          // Pagination: clamp to pageSize unless this group has been expanded
+          // or the user is searching/filtering (those modes already cull
+          // the list and a "Show all" pretense would be confusing).
+          const collapsed =
+            pageSize > 0 &&
+            !expandedCategories.has(cat) &&
+            !lc &&
+            !activeCategory &&
+            slugs.length > pageSize;
+          const visibleSlugs = collapsed ? slugs.slice(0, pageSize) : slugs;
+          const hiddenCount = slugs.length - visibleSlugs.length;
+          return (
+            <section key={cat} className="vendo-portal__group">
+              <h3 className="vendo-portal__group-title">{titleCase(cat)}</h3>
+              <ul className="vendo-portal__cards" role="list">
+                {visibleSlugs.map((slug) => (
+                  <li key={slug}>
+                    <ConnectionCard
+                      slug={slug}
+                      compact={layout === "list"}
+                      theme={theme}
+                      returnTo={returnTo}
+                      onConnected={onConnected}
+                      onDisconnected={onDisconnected}
+                    />
+                  </li>
+                ))}
+              </ul>
+              {hiddenCount > 0 ? (
+                <button
+                  type="button"
+                  className="vendo-portal__show-more"
+                  onClick={() =>
+                    setExpandedCategories((prev) => {
+                      const next = new Set(prev);
+                      next.add(cat);
+                      return next;
+                    })
+                  }
+                >
+                  Show all {slugs.length} {titleCase(cat).toLowerCase()}
+                </button>
+              ) : expandedCategories.has(cat) && pageSize > 0 && slugs.length > pageSize ? (
+                <button
+                  type="button"
+                  className="vendo-portal__show-more"
+                  onClick={() =>
+                    setExpandedCategories((prev) => {
+                      const next = new Set(prev);
+                      next.delete(cat);
+                      return next;
+                    })
+                  }
+                >
+                  Show fewer
+                </button>
+              ) : null}
+            </section>
+          );
+        })
       )}
     </div>
   );

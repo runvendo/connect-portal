@@ -372,6 +372,62 @@
   border-color: var(--vendo-color-brand);
 }
 
+.vendo-portal__filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vendo-spacing-xs);
+  margin-bottom: var(--vendo-spacing-lg);
+}
+
+.vendo-portal__filter-pill {
+  padding: 5px 12px;
+  border: 1px solid var(--vendo-color-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--vendo-color-text-muted);
+  font-size: 13px;
+  font-family: var(--vendo-font-family);
+  cursor: pointer;
+  transition: background 120ms ease-out, color 120ms ease-out, border-color 120ms ease-out;
+}
+
+.vendo-portal__filter-pill:hover {
+  border-color: var(--vendo-color-text-muted);
+  color: var(--vendo-color-text);
+}
+
+.vendo-portal__filter-pill--active {
+  background: var(--vendo-color-brand);
+  border-color: var(--vendo-color-brand);
+  color: var(--vendo-color-on-brand);
+  font-weight: 500;
+}
+
+.vendo-portal__filter-pill--active:hover {
+  /* Keep the active treatment on hover — colour movement was distracting. */
+  border-color: var(--vendo-color-brand);
+  color: var(--vendo-color-on-brand);
+}
+
+.vendo-portal__show-more {
+  margin-top: var(--vendo-spacing-sm);
+  padding: 6px 14px;
+  border: 1px solid var(--vendo-color-border);
+  background: transparent;
+  color: var(--vendo-color-text);
+  font-size: 13px;
+  font-family: var(--vendo-font-family);
+  font-weight: 500;
+  border-radius: var(--vendo-radius-sm);
+  cursor: pointer;
+  transition: background 120ms ease-out, border-color 120ms ease-out;
+}
+
+.vendo-portal__show-more:hover {
+  background: var(--vendo-color-bg-muted);
+  border-color: var(--vendo-color-text-muted);
+}
+
 .vendo-portal__group {
   margin-bottom: var(--vendo-spacing-lg);
 }
