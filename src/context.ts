@@ -1,0 +1,43 @@
+import { createContext } from "react";
+import type { Connection, Integration, Balance, SpendCaps } from "@vendodev/sdk";
+
+export interface PortalState {
+  connections: Connection[];
+  integrations: Integration[];
+  balance: Balance | null;
+  caps: SpendCaps | null;
+  status: "loading" | "ready" | "error";
+  error: Error | null;
+}
+
+export interface PortalContextValue extends PortalState {
+  /** Replaces or inserts a connection in the cache. */
+  upsertConnection(conn: Connection): void;
+  /** Removes a connection from the cache by slug. */
+  dropConnection(slug: string): void;
+  /** Replaces the balance in the cache. */
+  setBalance(b: Balance): void;
+  /** Replaces the spend-caps in the cache. */
+  setCaps(c: SpendCaps): void;
+
+  // Internal wiring set by VendoProvider — not part of the public surface but
+  // needed by useConnect to call the client without importing it directly.
+
+  /** @internal Build a connect URL for the given slug. */
+  _connectUrl(slug: string, opts?: { returnTo?: string; state?: string }): string;
+  /** @internal Base URL of the API (used to derive the expected postMessage origin). */
+  _baseUrl: string;
+  /** @internal Disconnect a connection by ID (only present if client.disconnect is defined). */
+  _disconnect?: (connectionId: string) => Promise<void>;
+  /** @internal Fetch latest connection data for a given slug from the client. */
+  _refetchConnection(slug: string): Promise<import("@vendodev/sdk").Connection | null>;
+}
+
+export const PortalContext = createContext<PortalContextValue | null>(null);
+
+export class VendoProviderMissingError extends Error {
+  constructor(hookName: string) {
+    super(`${hookName} must be used inside <VendoProvider>.`);
+    this.name = "VendoProviderMissingError";
+  }
+}

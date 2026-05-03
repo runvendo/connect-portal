@@ -1,0 +1,293 @@
+/* Vendo Connect Portal — component styles. */
+
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+/*
+ * Tokens are scoped to the package's own class selectors instead of :root so
+ * they don't override host-side --vendo-* variables or pollute the global
+ * cascade. A host can still override per-component by setting the same vars
+ * on a wrapper element around any of these classes.
+ */
+
+.vendo-portal,
+.vendo-connect-card,
+.vendo-connect-btn,
+.vendo-manage-btn {
+  --vendo-color-brand: #6B4FFF;
+  --vendo-color-bg: white;
+  --vendo-color-bg-muted: #f8f8fa;
+  --vendo-color-border: #e5e5ea;
+  --vendo-color-text: #1a1a1a;
+  --vendo-color-text-muted: #666;
+  /* Success/warning/error are reserved for icon dots and badges — not body text,
+     since success-on-white (~3:1) falls short of WCAG AA for body copy. */
+  --vendo-color-success: #10b981;
+  --vendo-color-warning: #f59e0b;
+  --vendo-color-error: #ef4444;
+  --vendo-radius: 12px;
+  --vendo-radius-sm: 8px;
+  --vendo-font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --vendo-card-padding: 16px;
+  --vendo-card-padding-compact: 12px;
+  --vendo-spacing-xs: 4px;
+  --vendo-spacing-sm: 8px;
+  --vendo-spacing-md: 12px;
+  --vendo-spacing-lg: 16px;
+  --vendo-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --vendo-color-on-brand: #fff;
+}
+
+/* ── Connection card ────────────────────────────────────────────────────────── */
+
+.vendo-connect-card {
+  display: flex;
+  align-items: center;
+  gap: var(--vendo-spacing-md);
+  padding: var(--vendo-card-padding);
+  border-radius: var(--vendo-radius);
+  border: 1px solid var(--vendo-color-border);
+  background: var(--vendo-color-bg);
+  font-family: var(--vendo-font-family);
+  min-height: 120px;
+  box-sizing: border-box;
+  box-shadow: var(--vendo-shadow-sm);
+}
+
+.vendo-connect-card--compact {
+  min-height: 80px;
+  padding: var(--vendo-card-padding-compact) 14px;
+}
+
+@media (max-width: 599px) {
+  .vendo-connect-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.vendo-connect-card__logo {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  object-fit: contain;
+  border-radius: var(--vendo-radius-sm);
+}
+
+.vendo-connect-card__info {
+  flex: 1;
+  min-width: 0;
+}
+
+.vendo-connect-card__name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--vendo-color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.vendo-connect-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vendo-spacing-xs);
+  font-size: 12px;
+  color: var(--vendo-color-text-muted);
+  margin-top: 2px;
+}
+
+.vendo-connect-card__badge--connected {
+  color: var(--vendo-color-success);
+}
+
+.vendo-connect-card__badge--warning {
+  color: var(--vendo-color-warning);
+}
+
+.vendo-connect-card__badge--error {
+  color: var(--vendo-color-error);
+}
+
+.vendo-connect-card__actions {
+  display: flex;
+  gap: var(--vendo-spacing-sm);
+  flex-shrink: 0;
+}
+
+.vendo-connect-card__cta {
+  padding: 7px var(--vendo-spacing-lg);
+  border-radius: var(--vendo-radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: var(--vendo-color-brand);
+  color: var(--vendo-color-on-brand);
+  font-family: inherit;
+}
+
+.vendo-connect-card__cta:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vendo-connect-card__cta--secondary {
+  background: transparent;
+  border: 1px solid var(--vendo-color-border);
+  color: var(--vendo-color-text);
+}
+
+/* ── Spinner ────────────────────────────────────────────────────────────────── */
+
+.vendo-spinner {
+  stroke: currentColor;
+  animation: vendo-spin 0.8s linear infinite;
+}
+
+@keyframes vendo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ── Standalone buttons ─────────────────────────────────────────────────────── */
+
+.vendo-connect-btn {
+  padding: 7px var(--vendo-spacing-lg);
+  border-radius: var(--vendo-radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  background: var(--vendo-color-brand);
+  color: var(--vendo-color-on-brand);
+  font-family: var(--vendo-font-family);
+}
+
+.vendo-connect-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.vendo-manage-btn {
+  padding: 7px var(--vendo-spacing-lg);
+  border-radius: var(--vendo-radius-sm);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--vendo-color-border);
+  background: transparent;
+  color: var(--vendo-color-text);
+  font-family: var(--vendo-font-family);
+}
+
+/* ── ConnectPortal (grid / list container) ──────────────────────────────────── */
+
+.vendo-portal {
+  font-family: var(--vendo-font-family);
+  color: var(--vendo-color-text);
+}
+
+.vendo-portal__search-wrap {
+  margin-bottom: var(--vendo-spacing-lg);
+}
+
+.vendo-portal__search-row {
+  display: flex;
+  align-items: center;
+  gap: var(--vendo-spacing-sm);
+}
+
+.vendo-portal__search-clear {
+  flex-shrink: 0;
+  padding: 4px var(--vendo-spacing-sm);
+  border-radius: var(--vendo-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--vendo-color-border);
+  background: transparent;
+  color: var(--vendo-color-text-muted);
+  font-family: var(--vendo-font-family);
+  line-height: 1;
+}
+
+.vendo-portal__search {
+  width: 100%;
+  padding: 8px var(--vendo-spacing-md);
+  border: 1px solid var(--vendo-color-border);
+  border-radius: var(--vendo-radius-sm);
+  font-size: 14px;
+  font-family: var(--vendo-font-family);
+  color: var(--vendo-color-text);
+  background: var(--vendo-color-bg);
+  box-sizing: border-box;
+}
+
+.vendo-portal__search:focus {
+  outline: 2px solid var(--vendo-color-brand);
+  outline-offset: 1px;
+  border-color: var(--vendo-color-brand);
+}
+
+.vendo-portal__group {
+  margin-bottom: var(--vendo-spacing-lg);
+}
+
+.vendo-portal__group-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--vendo-color-text-muted);
+  margin: 0 0 var(--vendo-spacing-sm) 0;
+}
+
+.vendo-portal__cards {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Grid layout: responsive columns, min 280px wide */
+.vendo-portal--grid .vendo-portal__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--vendo-spacing-md);
+}
+
+/* List layout: single column */
+.vendo-portal--list .vendo-portal__cards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vendo-spacing-sm);
+}
+
+/* Mobile: force single column regardless of layout */
+@media (max-width: 599px) {
+  .vendo-portal--grid .vendo-portal__cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Empty state ────────────────────────────────────────────────────────────── */
+
+.vendo-portal__empty {
+  display: flex;
+  align-items: center;
+  gap: var(--vendo-spacing-md);
+  padding: var(--vendo-spacing-lg);
+  color: var(--vendo-color-text-muted);
+  font-size: 14px;
+}
+
+.vendo-portal__clear-btn {
+  padding: 4px var(--vendo-spacing-md);
+  border-radius: var(--vendo-radius-sm);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--vendo-color-border);
+  background: transparent;
+  color: var(--vendo-color-text);
+  font-family: var(--vendo-font-family);
+}

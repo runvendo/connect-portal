@@ -1,0 +1,79 @@
+{
+  "name": "@vendodev/connect-portal",
+  "version": "0.1.0",
+  "description": "React component package for Vendo connections — drop-in connect buttons, cards, and full portal grid.",
+  "type": "module",
+  "license": "MIT",
+  "homepage": "https://vendo.run",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/runvendo/connect-portal.git"
+  },
+  "bugs": "https://github.com/runvendo/connect-portal/issues",
+  "keywords": ["vendo", "connect-portal", "oauth", "react", "ui"],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "dist/index.cjs",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./testing": {
+      "import": {
+        "types": "./dist/testing/index.d.ts",
+        "default": "./dist/testing/index.js"
+      },
+      "require": {
+        "types": "./dist/testing/index.d.cts",
+        "default": "./dist/testing/index.cjs"
+      }
+    },
+    "./styles.css": "./dist/components/styles.css"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsup --clean",
+    "lint": "tsc --noEmit",
+    "test": "vitest run",
+    "size:check": "node scripts/check-bundle-size.mjs",
+    "prepublishOnly": "npm run lint && npm run test && npm run build && npm run size:check",
+    "storybook": "storybook dev --port 6006",
+    "build-storybook": "storybook build"
+  },
+  "peerDependencies": {
+    "@vendodev/sdk": ">=0.1.0 <1.0.0",
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@storybook/react-vite": "^8.6.18",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/react": "^19",
+    "@vendodev/sdk": "^0.1.0",
+    "happy-dom": "^18.0.1",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "storybook": "^8.6.18",
+    "tsup": "^8.5.1",
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.3"
+  }
+}
