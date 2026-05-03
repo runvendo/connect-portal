@@ -85,7 +85,8 @@ describe("useConnect – C2 popup flow", () => {
 
   it("falls back to location.assign when popup is blocked and resolves redirect_initiated", async () => {
     windowOpenSpy = vi.spyOn(window, "open").mockReturnValue(null);
-    const assignSpy = vi.spyOn(window.location, "assign").mockImplementation(() => {});
+    const assignSpy = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign: assignSpy, href: window.location.href, origin: window.location.origin });
 
     let result: { status: string } | undefined;
 

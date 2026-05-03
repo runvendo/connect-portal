@@ -56,7 +56,8 @@ describe("ConnectButton", () => {
   it("calls onError when popup is blocked (window.open returns null)", async () => {
     const { Wrapper, client } = makeWrapper();
     // Mock location.assign for redirect fallback
-    const assignSpy = vi.spyOn(window.location, "assign").mockImplementation(() => {});
+    const assignSpy = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign: assignSpy, href: window.location.href, origin: window.location.origin });
 
     const onError = vi.fn();
     render(

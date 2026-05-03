@@ -10,7 +10,13 @@
     "url": "git+https://github.com/runvendo/connect-portal.git"
   },
   "bugs": "https://github.com/runvendo/connect-portal/issues",
-  "keywords": ["vendo", "connect-portal", "oauth", "react", "ui"],
+  "keywords": [
+    "vendo",
+    "connect-portal",
+    "oauth",
+    "react",
+    "ui"
+  ],
   "engines": {
     "node": ">=18"
   },
@@ -69,6 +75,7 @@
     "@types/react": "^19",
     "@vendodev/sdk": "^0.1.0",
     "happy-dom": "^18.0.1",
+    "jsdom": "^25.0.1",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "storybook": "^8.6.18",

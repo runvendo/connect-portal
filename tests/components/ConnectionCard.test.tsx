@@ -88,7 +88,8 @@ describe("ConnectionCard", () => {
     });
 
     it("calls connect with correct slug on Connect click", async () => {
-      const assignSpy = vi.spyOn(window.location, "assign").mockImplementation(() => {});
+      const assignSpy = vi.fn();
+    vi.stubGlobal("location", { ...window.location, assign: assignSpy, href: window.location.href, origin: window.location.origin });
       const { Wrapper } = makeWrapper();
       render(<ConnectionCard slug="telegram" />, { wrapper: Wrapper });
 
