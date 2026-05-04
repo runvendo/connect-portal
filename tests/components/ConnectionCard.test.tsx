@@ -225,7 +225,9 @@ describe("ConnectionCard", () => {
 
       await waitFor(() => {
         const call = windowOpenSpy.mock.calls[0];
-        expect(call[0]).toMatch(/\/dashboard\/connections\//);
+        // /dashboard/ prefix removed; manage now points at /connections/<id> directly.
+        expect(call[0]).toMatch(/\/connections\//);
+        expect(call[0]).not.toMatch(/\/dashboard\//);
       });
     });
   });
