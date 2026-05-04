@@ -1,6 +1,6 @@
 {
   "name": "@vendodev/connect-portal",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "React component package for Vendo connections — drop-in connect buttons, cards, and full portal grid.",
   "type": "module",
   "license": "MIT",
