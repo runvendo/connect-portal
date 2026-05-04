@@ -7,7 +7,7 @@ import { fetchTransport } from "./sse/fetchTransport.js";
 import type { SseEvent, SseTransport } from "./sse/types.js";
 
 type Action =
-  | { type: "LOADED"; connections: Connection[]; integrations: Integration[]; balance: Balance; caps: SpendCaps }
+  | { type: "LOADED"; connections: Connection[]; integrations: Integration[]; balance: Balance | null; caps: SpendCaps | null }
   | { type: "ERROR"; error: Error }
   | { type: "UPSERT_CONNECTION"; connection: Connection }
   | { type: "DROP_CONNECTION"; slug: string }
