@@ -84,10 +84,18 @@ export function ConnectionCard({
   );
 
   // Derive the dashboard URL for Manage actions.
-  // Use connection.id (UUID) — the dashboard route queries .eq("id", connectionId).
-  const dashboardOrigin = ctx ? ctx._baseUrl.replace(/\/api\/?$/, "") : "https://vendo.run";
+  // Use connection.id (UUID) — the dashboard route at /connections/<id>
+  // queries .eq("id", connectionId).
+  //
+  // Use the popup host (derived from client.connectUrl) rather than the API
+  // baseUrl, so consumers who proxy the SDK API surface through their own
+  // origin still get a manage URL pointing at the real Vendo dashboard.
+  const dashboardOrigin = ctx
+    ? safeOrigin(ctx._connectUrl("__placeholder__")) ??
+      ctx._baseUrl.replace(/\/api\/?$/, "")
+    : "https://vendo.run";
   const dashboardUrl = connection
-    ? `${dashboardOrigin}/dashboard/connections/${connection.id}`
+    ? `${dashboardOrigin}/connections/${connection.id}`
     : null;
 
   function handleConnect(): void {
@@ -315,6 +323,14 @@ function SecondaryAction({
       );
     default:
       return null;
+  }
+}
+
+function safeOrigin(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
   }
 }
 
