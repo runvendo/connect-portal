@@ -28,8 +28,11 @@ export default defineConfig(({ mode }) => {
     server: {
       port: 5174,
       proxy: {
+        // Only the SDK API surface is proxied — bearer-auth, no cookies needed.
+        // The connect popup goes DIRECTLY at vendo.run (not through the proxy)
+        // so the user's Supabase session cookies on vendo.run actually apply
+        // to the popup's request. See src/App.tsx connectUrl override.
         "/api": { target, changeOrigin: true, secure: true, ws: true },
-        "/connect": { target, changeOrigin: true, secure: true },
       },
     },
   };

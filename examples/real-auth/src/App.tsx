@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
-import { Vendo } from "@vendodev/sdk";
+import { Vendo, connectUrl as buildConnectUrl } from "@vendodev/sdk";
+import type { ConnectUrlOptions } from "@vendodev/sdk";
 import {
   VendoProvider,
   ConnectPortal,
@@ -9,11 +10,14 @@ import {
 } from "@vendodev/connect-portal";
 
 const apiKey = import.meta.env.VITE_VENDO_API_KEY;
-// Use the dev server's own origin as baseUrl. vite.config.ts proxies /api/* and
-// /connect/* to the real Vendo backend (default https://vendo.run), so the SDK
-// can fetch without hitting browser CORS. Override target via VITE_VENDO_BASE_URL.
-const baseUrl =
+// API calls use the dev server's own origin so vite's /api proxy picks them up
+// (CORS bypass). The popup URL needs to point directly at the real Vendo host
+// — opening the popup on localhost would mean the user's Supabase session
+// cookies on vendo.run never apply, and the dashboard layout would redirect
+// the popup to /login. Set the popup target via VITE_VENDO_BASE_URL.
+const apiBaseUrl =
   typeof window !== "undefined" ? window.location.origin : "http://localhost:5174";
+const popupHost = import.meta.env.VITE_VENDO_BASE_URL || "https://vendo.run";
 
 export function App(): React.ReactElement {
   if (!apiKey || apiKey === "vendo_sk_replace_me") {
@@ -25,17 +29,21 @@ export function App(): React.ReactElement {
   // connectUrl). Hot-reloads when src/ changes via the vite alias.
   // fetch.bind(window) — without it, the SDK's `this.fetch(...)` throws
   // "Illegal invocation" because fetch needs window as receiver.
-  const client = useMemo(
-    () =>
-      new Vendo({
-        apiKey,
-        baseUrl,
-        // Optional ?slow=N query param simulates a slow network so the loading
-        // skeleton is visible during dev. No-op when not set.
-        fetch: makeFetch(window.location.search),
-      }),
-    [],
-  );
+  const client = useMemo(() => {
+    const sdk = new Vendo({
+      apiKey,
+      baseUrl: apiBaseUrl,
+      // Optional ?slow=N query param simulates a slow network so the loading
+      // skeleton is visible during dev. No-op when not set.
+      fetch: makeFetch(window.location.search),
+    });
+    // Override connectUrl so the popup opens at the real Vendo host (where
+    // the user's Supabase session lives) while API calls still go through
+    // the local /api proxy.
+    sdk.connectUrl = (slug: string, opts?: Omit<ConnectUrlOptions, "apiKey" | "baseUrl">) =>
+      buildConnectUrl(slug, { apiKey: sdk.apiKey, baseUrl: popupHost, ...(opts ?? {}) });
+    return sdk;
+  }, []);
 
   const [theme, setTheme] = useState<Theme>("light");
 
@@ -47,7 +55,7 @@ export function App(): React.ReactElement {
             connect-portal — real auth playground
           </h1>
           <p style={{ ...styles.subtitle, color: themeMuted(theme) }}>
-            Live data from <code>{baseUrl}</code>. Edits in <code>../../src/</code>{" "}
+            Live data from <code>{apiBaseUrl}</code> (popup → <code>{popupHost}</code>). Edits in <code>../../src/</code>{" "}
             hot-reload here.
           </p>
           <ThemeSwitcher value={theme} onChange={setTheme} />
