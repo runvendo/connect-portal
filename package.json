@@ -73,7 +73,7 @@
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19",
-    "@vendodev/sdk": "^0.1.0",
+    "@vendodev/sdk": "^0.3.0",
     "happy-dom": "^18.0.1",
     "jsdom": "^25.0.1",
     "react": "19.2.3",
