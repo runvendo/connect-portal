@@ -116,6 +116,96 @@
   --vendo-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
 }
 
+/* ── Theme: glass-light ────────────────────────────────────────────────────── */
+/*
+ * Frosted-glass cards over light backgrounds. The card surface is a
+ * translucent white (45% alpha) + backdrop-filter blur, so the host page's
+ * background colour / image bleeds through and the cards pick up its tint
+ * (the "take a bit of the background color" effect). Text + borders are
+ * darkened slightly so they still read on the blurred backdrop.
+ *
+ * Browsers without backdrop-filter (Firefox in some configurations) fall
+ * back to the rgba colour — still tasteful, no broken layout.
+ */
+.vendo-theme-glass-light.vendo-portal,
+.vendo-theme-glass-light .vendo-portal,
+.vendo-theme-glass-light.vendo-connect-card,
+.vendo-theme-glass-light .vendo-connect-card,
+.vendo-theme-glass-light.vendo-connect-btn,
+.vendo-theme-glass-light .vendo-connect-btn,
+.vendo-theme-glass-light.vendo-manage-btn,
+.vendo-theme-glass-light .vendo-manage-btn {
+  --vendo-color-brand: #2B7A5E;
+  --vendo-color-on-brand: #FAF7F2;
+
+  --vendo-color-bg: rgba(255, 255, 255, 0.45);
+  --vendo-color-bg-muted: rgba(255, 255, 255, 0.25);
+  --vendo-color-border: rgba(28, 27, 24, 0.10);
+
+  --vendo-color-text: #1C1B18;
+  --vendo-color-text-muted: #4E4D49;
+
+  --vendo-shadow-sm: 0 1px 2px 0 rgba(28, 27, 24, 0.06);
+}
+
+.vendo-theme-glass-light .vendo-connect-card,
+.vendo-theme-glass-light.vendo-connect-card {
+  /* Vendor-prefix for Safari < 18 still seeing -webkit-backdrop-filter */
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* ── Theme: glass-dark ─────────────────────────────────────────────────────── */
+/*
+ * Same frosted-glass idea over dark backgrounds. Card is a translucent
+ * near-black; text + brand lift to keep contrast on whatever sits behind.
+ */
+.vendo-theme-glass-dark.vendo-portal,
+.vendo-theme-glass-dark .vendo-portal,
+.vendo-theme-glass-dark.vendo-connect-card,
+.vendo-theme-glass-dark .vendo-connect-card,
+.vendo-theme-glass-dark.vendo-connect-btn,
+.vendo-theme-glass-dark .vendo-connect-btn,
+.vendo-theme-glass-dark.vendo-manage-btn,
+.vendo-theme-glass-dark .vendo-manage-btn {
+  --vendo-color-brand: #4D9E7C;
+  --vendo-color-on-brand: #0A1E18;
+
+  --vendo-color-bg: rgba(28, 27, 24, 0.45);
+  --vendo-color-bg-muted: rgba(28, 27, 24, 0.25);
+  --vendo-color-border: rgba(250, 247, 242, 0.12);
+
+  --vendo-color-text: #FAF7F2;
+  --vendo-color-text-muted: #C1B7AB;
+
+  --vendo-color-success: #4D9E7C;
+  --vendo-color-warning: #DBA83A;
+  --vendo-color-error: #E16D5A;
+
+  --vendo-shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.vendo-theme-glass-dark .vendo-connect-card,
+.vendo-theme-glass-dark.vendo-connect-card {
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* Logos in glass-dark behave the same as in dark mode — sit on a soft
+ * parchment tile so fixed-colour brand marks stay legible against the
+ * blurred backdrop, which may be any colour. */
+.vendo-theme-glass-dark .vendo-connect-card__logo-wrap,
+.vendo-theme-glass-dark .vendo-connect-card > img.vendo-connect-card__logo {
+  background: #FAF7F2;
+  border-radius: var(--vendo-radius-sm);
+}
+
+.vendo-theme-glass-dark .vendo-connect-card__logo-wrap > .vendo-connect-card__logo,
+.vendo-theme-glass-dark .vendo-connect-card > img.vendo-connect-card__logo {
+  padding: 4px;
+  box-sizing: border-box;
+}
+
 /* ── Connection card ────────────────────────────────────────────────────────── */
 
 .vendo-connect-card {
@@ -319,16 +409,10 @@
   color: var(--vendo-color-text);
 }
 
-/* When a theme preset is active, paint the container surface so the theme is
- * visible standalone (without forcing the host page background to match).
- * Hosts who want a flush, host-bg-bleed look can pass theme="light" (default)
- * or override --vendo-color-bg-muted on a wrapper. */
-.vendo-portal.vendo-theme-beige,
-.vendo-portal.vendo-theme-dark {
-  background: var(--vendo-color-bg-muted);
-  padding: var(--vendo-spacing-lg);
-  border-radius: var(--vendo-radius);
-}
+/* The portal container is transparent on every theme — cards sit directly on
+ * the host page background so the portal blends rather than carrying its own
+ * surface. Each theme still drives card/button/text colours via the CSS vars
+ * declared on .vendo-portal at the top of this file. */
 
 .vendo-portal__search-wrap {
   margin-bottom: var(--vendo-spacing-lg);

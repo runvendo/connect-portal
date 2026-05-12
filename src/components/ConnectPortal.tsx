@@ -9,7 +9,7 @@ export type Category = string;
 
 /** Built-in theme presets. Override individual tokens via CSS custom properties
  *  on a wrapper element for finer control. */
-export type Theme = "light" | "beige" | "dark";
+export type Theme = "light" | "beige" | "dark" | "glass-light" | "glass-dark";
 
 export interface ConnectPortalProps {
   /** Filter to these categories only. Default: show all groups. */
