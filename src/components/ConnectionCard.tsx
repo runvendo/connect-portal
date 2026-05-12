@@ -21,7 +21,7 @@ interface ConnectionCardProps {
   /** Built-in theme preset. Defaults to "light"; pass "beige" or "dark"
    *  for the other Vendo presets. Inherits from a wrapping <ConnectPortal>
    *  if rendered inside one. */
-  theme?: "light" | "beige" | "dark";
+  theme?: "light" | "beige" | "dark" | "glass-light" | "glass-dark";
   className?: string;
 }
 

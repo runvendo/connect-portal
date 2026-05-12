@@ -152,6 +152,8 @@ function ThemeSwitcher({
     { id: "light", label: "Light" },
     { id: "beige", label: "Beige" },
     { id: "dark", label: "Dark" },
+    { id: "glass-light", label: "Glass-light" },
+    { id: "glass-dark", label: "Glass-dark" },
   ];
   return (
     <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.75rem" }}>
@@ -187,6 +189,18 @@ function themePageStyle(theme: Theme): React.CSSProperties {
       return { background: "#FAF7F2" };
     case "dark":
       return { background: "#000000" };
+    case "glass-light":
+      // Soft pastel gradient so the frosted-glass cards have something to
+      // pick up. In real usage the host's own page background drives this.
+      return {
+        background:
+          "linear-gradient(135deg, #FBE8D3 0%, #D5E8F4 40%, #E8D5F4 100%)",
+      };
+    case "glass-dark":
+      return {
+        background:
+          "linear-gradient(135deg, #1A1530 0%, #0F2C3A 50%, #2B0A1F 100%)",
+      };
     default:
       return { background: "#FFFFFF" };
   }
@@ -198,17 +212,22 @@ function themeSectionStyle(theme: Theme): React.CSSProperties {
       return { background: "#1C1B18", border: "1px solid #35342F" };
     case "beige":
       return { background: "#FFFFFF", border: "1px solid #E6DDD0" };
+    case "glass-light":
+    case "glass-dark":
+      // Section wrapper drops its own surface so the page-level gradient
+      // bleeds through to the glass cards. Border kept faint for structure.
+      return { background: "transparent", border: "1px solid transparent" };
     default:
       return { background: "#FFFFFF", border: "1px solid #e5e5ea" };
   }
 }
 
 function themeText(theme: Theme): string {
-  return theme === "dark" ? "#FAF7F2" : "#1C1B18";
+  return theme === "dark" || theme === "glass-dark" ? "#FAF7F2" : "#1C1B18";
 }
 
 function themeMuted(theme: Theme): string {
-  return theme === "dark" ? "#C1B7AB" : "#6B6B65";
+  return theme === "dark" || theme === "glass-dark" ? "#C1B7AB" : "#6B6B65";
 }
 
 function makeFetch(search: string): typeof fetch {
