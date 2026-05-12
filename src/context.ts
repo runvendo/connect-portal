@@ -6,7 +6,19 @@ export interface PortalState {
   integrations: Integration[];
   balance: Balance | null;
   caps: SpendCaps | null;
+  /**
+   * Overall portal status. Gates the grid skeleton — flips to "ready" the
+   * moment the integration catalog lands, even if connections/billing are
+   * still in flight (see VendoProvider's optimistic loading).
+   */
   status: "loading" | "ready" | "error";
+  /**
+   * Connections-list-specific status. Cards use this to decide whether to
+   * show a spinner on the connect/manage button while the server-side
+   * Composio credential fan-out is still resolving. Separate from `status`
+   * so the integration catalog can render immediately.
+   */
+  connectionsStatus: "loading" | "ready" | "error";
   error: Error | null;
 }
 

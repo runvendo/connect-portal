@@ -7,7 +7,9 @@ import { fetchTransport } from "./sse/fetchTransport.js";
 import type { SseEvent, SseTransport } from "./sse/types.js";
 
 type Action =
-  | { type: "LOADED"; connections: Connection[]; integrations: Integration[]; balance: Balance | null; caps: SpendCaps | null }
+  | { type: "SET_INTEGRATIONS"; integrations: Integration[] }
+  | { type: "SET_CONNECTIONS"; connections: Connection[] }
+  | { type: "SET_CONNECTIONS_ERROR" }
   | { type: "ERROR"; error: Error }
   | { type: "UPSERT_CONNECTION"; connection: Connection }
   | { type: "DROP_CONNECTION"; slug: string }
@@ -16,16 +18,21 @@ type Action =
 
 function reducer(state: PortalState, action: Action): PortalState {
   switch (action.type) {
-    case "LOADED":
+    case "SET_INTEGRATIONS":
+      // Integrations are the gate: once they land, the grid can render
+      // every card with name/logo/category, even if connections + billing
+      // are still in flight. Each card defaults to status='available'
+      // until SET_CONNECTIONS upserts its row.
       return {
         ...state,
-        connections: action.connections,
         integrations: action.integrations,
-        balance: action.balance,
-        caps: action.caps,
         status: "ready",
         error: null,
       };
+    case "SET_CONNECTIONS":
+      return { ...state, connections: action.connections, connectionsStatus: "ready" };
+    case "SET_CONNECTIONS_ERROR":
+      return { ...state, connectionsStatus: "error" };
     case "ERROR":
       return { ...state, status: "error", error: action.error };
     case "UPSERT_CONNECTION": {
@@ -59,6 +66,7 @@ const INITIAL_STATE: PortalState = {
   balance: null,
   caps: null,
   status: "loading",
+  connectionsStatus: "loading",
   error: null,
 };
 
@@ -101,39 +109,57 @@ export function VendoProvider({ client, children, sseTransport }: VendoProviderP
   useEffect(() => {
     let cancelled = false;
 
-    async function load(): Promise<void> {
-      try {
-        // Connections + integrations are required to render the portal.
-        // Billing data is best-effort: a missing spend-caps endpoint or an
-        // unfunded tenant should not blank out the whole UI.
-        const [connections, integrations, billingResults] = await Promise.all([
-          client.connections.list(),
-          client.integrations.list(),
-          Promise.allSettled([
-            client.billing.balance(),
-            client.billing.spendCaps(),
-          ]),
-        ]);
-        const [balanceResult, capsResult] = billingResults;
-        const balance = balanceResult.status === "fulfilled" ? balanceResult.value : null;
-        const caps = capsResult.status === "fulfilled" ? capsResult.value : null;
-        if (balanceResult.status === "rejected") {
-          console.warn("[VendoProvider] billing.balance failed:", balanceResult.reason);
-        }
-        if (capsResult.status === "rejected") {
-          console.warn("[VendoProvider] billing.spendCaps failed:", capsResult.reason);
-        }
-        if (!cancelled) {
-          dispatch({ type: "LOADED", connections, integrations, balance, caps });
-        }
-      } catch (err) {
+    // Fire each fetch independently and dispatch as soon as it resolves —
+    // do NOT wait on Promise.all. The slowest fetch (typically billing.balance
+    // against prod, ~6s) used to gate the entire grid; now it only gates the
+    // useBilling consumers. Integrations is the only fetch the grid actually
+    // needs to start rendering; connections trickles in to flip per-card
+    // status from 'available' → 'connected' as soon as it lands. Billing is
+    // best-effort (a missing endpoint or unfunded tenant should not blank
+    // out the UI).
+    void client.integrations
+      .list()
+      .then((integrations) => {
+        if (!cancelled) dispatch({ type: "SET_INTEGRATIONS", integrations });
+      })
+      .catch((err) => {
+        // Integrations are the gate: if they fail, we have nothing to render.
         if (!cancelled) {
           dispatch({ type: "ERROR", error: err instanceof Error ? err : new Error(String(err)) });
         }
-      }
-    }
+      });
 
-    load();
+    void client.connections
+      .list()
+      .then((connections) => {
+        if (!cancelled) dispatch({ type: "SET_CONNECTIONS", connections });
+      })
+      .catch((err) => {
+        // Connections failure is non-fatal: every card just stays
+        // 'available'. Flip connectionsStatus to 'error' so card buttons
+        // stop spinning, and log for the consumer.
+        if (!cancelled) dispatch({ type: "SET_CONNECTIONS_ERROR" });
+        console.warn("[VendoProvider] connections.list failed:", err);
+      });
+
+    void client.billing
+      .balance()
+      .then((balance) => {
+        if (!cancelled) dispatch({ type: "SET_BALANCE", balance });
+      })
+      .catch((err) => {
+        console.warn("[VendoProvider] billing.balance failed:", err);
+      });
+
+    void client.billing
+      .spendCaps()
+      .then((caps) => {
+        if (!cancelled) dispatch({ type: "SET_CAPS", caps });
+      })
+      .catch((err) => {
+        console.warn("[VendoProvider] billing.spendCaps failed:", err);
+      });
+
     return () => { cancelled = true; };
   // Run-once on mount; client identity is captured via clientRef for SSE handlers
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,13 +1,20 @@
 import React, { useMemo, useState } from "react";
-import { Vendo, connectUrl as buildConnectUrl } from "@vendodev/sdk";
-import type { ConnectUrlOptions } from "@vendodev/sdk";
 import {
   VendoProvider,
   ConnectPortal,
   ConnectionCard,
   ConnectButton,
   type Theme,
+  type ConnectPortalClient,
 } from "@vendodev/connect-portal";
+
+// NOTE: The `@vendodev/sdk` main entry re-exports the reconciler module at the
+// top level, which imports node:url + node:path unconditionally. Vite
+// externalizes those, leaving `fileURLToPath` undefined at runtime — the
+// playground crashes on load with `(0, import_url.fileURLToPath) is not a
+// function`. Until the SDK splits the reconciler into a separate subpath
+// export, we satisfy ConnectPortalClient directly here. All the shape we need
+// is HTTP + a connectUrl builder, and the wire formats are documented.
 
 const apiKey = import.meta.env.VITE_VENDO_API_KEY;
 // API calls use the dev server's own origin so vite's /api proxy picks them up
@@ -24,25 +31,63 @@ export function App(): React.ReactElement {
     return <SetupNotice />;
   }
 
-  // Vendo class implements the ConnectPortalClient surface (apiKey, baseUrl,
-  // connections.list/get, integrations.list/get, billing.balance/spendCaps,
-  // connectUrl). Hot-reloads when src/ changes via the vite alias.
-  // fetch.bind(window) — without it, the SDK's `this.fetch(...)` throws
-  // "Illegal invocation" because fetch needs window as receiver.
-  const client = useMemo(() => {
-    const sdk = new Vendo({
+  // Hand-rolled ConnectPortalClient. The surface is small enough (4 reads +
+  // connectUrl) that bypassing the Vendo class is straightforward and avoids
+  // the reconciler import bug described above.
+  const client = useMemo<ConnectPortalClient>(() => {
+    const f = makeFetch(window.location.search);
+    const headers = { Authorization: `Bearer ${apiKey}`, "Vendo-API-Version": "2026-05-02" };
+    async function getJson<T>(path: string): Promise<T> {
+      const res = await f(`${apiBaseUrl}${path}`, { headers });
+      if (!res.ok) throw new Error(`${res.status} on ${path}`);
+      return (await res.json()) as T;
+    }
+    const conns = {
+      async list() {
+        const body = await getJson<{ connections?: unknown[] }>(
+          "/api/deployments/me/connections",
+        );
+        // The SDK normally camelCases the wire format; for the playground the
+        // raw shape is fine — the portal's Connection.slug/status/id are the
+        // only fields the UI reads.
+        return ((body.connections ?? []) as Array<Record<string, unknown>>).map(camelize) as ReturnType<typeof camelize>[] as never;
+      },
+      async get(slug: string) {
+        const all = await conns.list();
+        return (all as unknown as Array<{ slug: string }>).find((c) => c.slug === slug) as never;
+      },
+    };
+    const integ = {
+      async list() {
+        const body = await getJson<{ integrations?: unknown[] }>("/api/integrations");
+        return ((body.integrations ?? []) as Array<Record<string, unknown>>).map(camelize) as never;
+      },
+      async get(slug: string) {
+        const all = await integ.list();
+        return (all as unknown as Array<{ slug: string }>).find((i) => i.slug === slug) as never;
+      },
+    };
+    const billing = {
+      async balance() {
+        return (await getJson<unknown>("/api/billing/balance")) as never;
+      },
+      async spendCaps() {
+        return (await getJson<unknown>("/api/billing/spend-caps")) as never;
+      },
+    };
+    return {
       apiKey,
       baseUrl: apiBaseUrl,
-      // Optional ?slow=N query param simulates a slow network so the loading
-      // skeleton is visible during dev. No-op when not set.
-      fetch: makeFetch(window.location.search),
-    });
-    // Override connectUrl so the popup opens at the real Vendo host (where
-    // the user's Supabase session lives) while API calls still go through
-    // the local /api proxy.
-    sdk.connectUrl = (slug: string, opts?: Omit<ConnectUrlOptions, "apiKey" | "baseUrl">) =>
-      buildConnectUrl(slug, { apiKey: sdk.apiKey, baseUrl: popupHost, ...(opts ?? {}) });
-    return sdk;
+      connections: conns,
+      integrations: integ,
+      billing,
+      connectUrl: (slug: string, opts?: { returnTo?: string; state?: string }) => {
+        const params = new URLSearchParams({ app_key: apiKey });
+        if (opts?.returnTo) params.set("return_to", opts.returnTo);
+        if (opts?.state) params.set("state", opts.state);
+        return `${popupHost}/connections/connect/${slug}?${params.toString()}`;
+      },
+    };
   }, []);
 
   const [theme, setTheme] = useState<Theme>("light");
@@ -244,3 +289,15 @@ const styles = {
     overflowX: "auto",
   } satisfies React.CSSProperties,
 };
+
+// Convert a snake_case wire object to camelCase shallowly. The portal only
+// reads top-level fields (slug, status, displayName, logoUrl, brandColor,
+// etc.) so a shallow pass is enough.
+function camelize(obj: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    const ck = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    out[ck] = v;
+  }
+  return out;
+}

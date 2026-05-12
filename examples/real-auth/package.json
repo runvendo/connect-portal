@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@vendodev/connect-portal": "file:../..",
-    "@vendodev/sdk": "^0.3.0",
+    "@vendodev/sdk": "^1.0.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

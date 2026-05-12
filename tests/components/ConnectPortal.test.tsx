@@ -164,15 +164,33 @@ describe("ConnectPortal", () => {
       });
     });
 
-    it("renders category group headers", async () => {
+    it("does NOT render per-category headers in the default 'All' view", async () => {
+      // Flat-grid contract: when no category pill is active, the grid is one
+      // sorted list — no Messaging/AI/Storage/Productivity section breaks.
+      // Headers only show after the user picks a specific category pill
+      // (see the next test).
       const { Wrapper } = makeWrapper();
       render(<ConnectPortal />, { wrapper: Wrapper });
       await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /messaging/i })).toBeInTheDocument();
-        expect(screen.getByRole("heading", { name: /^ai$/i })).toBeInTheDocument();
-        expect(screen.getByRole("heading", { name: /storage/i })).toBeInTheDocument();
-        expect(screen.getByRole("heading", { name: /productivity/i })).toBeInTheDocument();
+        expect(screen.getByText("Telegram")).toBeInTheDocument();
       });
+      expect(screen.queryByRole("heading", { name: /messaging/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: /^ai$/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: /storage/i })).not.toBeInTheDocument();
+      expect(screen.queryByRole("heading", { name: /productivity/i })).not.toBeInTheDocument();
+    });
+
+    it("renders the active category header after a pill is clicked", async () => {
+      const user = userEvent.setup();
+      const { Wrapper } = makeWrapper();
+      render(<ConnectPortal />, { wrapper: Wrapper });
+      await waitFor(() => {
+        expect(screen.getByText("Telegram")).toBeInTheDocument();
+      });
+      await user.click(screen.getByRole("tab", { name: /messaging/i }));
+      expect(await screen.findByRole("heading", { name: /messaging/i })).toBeInTheDocument();
+      // Other categories are filtered out, so their headers stay hidden.
+      expect(screen.queryByRole("heading", { name: /^ai$/i })).not.toBeInTheDocument();
     });
 
     it("cards are wrapped in ul with role=list", async () => {

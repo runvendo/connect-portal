@@ -38,11 +38,16 @@ export function ConnectionCard({
   theme = "light",
   className,
 }: ConnectionCardProps): React.ReactElement {
-  const { connection, status } = useConnection(slug);
+  const { connection, status, connectionsStatus } = useConnection(slug);
   const { integrations } = useIntegrations();
   const { connect, disconnect } = useConnect();
   const ctx = useContext(PortalContext);
   const [inFlight, setInFlight] = useState(false);
+  // Connections list is still resolving on the server (Composio credential
+  // fan-out). The card has its integration metadata, so name/logo render
+  // immediately, but the connect/manage button can't pick its real state
+  // yet — show a spinner CTA until we know.
+  const connectionsPending = connectionsStatus === "loading" && !connection;
   // Track mount status so post-await state updates are skipped after unmount
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -54,9 +59,15 @@ export function ConnectionCard({
 
   // Determine effective state; treat status='available' same as no connection.
   // When a popup connect is in-flight, show 'connecting' regardless of server state.
+  // When the connections fetch is still resolving, surface 'pending' so the
+  // button renders a spinner instead of optimistically claiming 'available'.
   const serverStatus =
     !connection || connection.status === "available" ? "available" : connection.status;
-  const effectiveStatus = inFlight ? "connecting" : serverStatus;
+  const effectiveStatus = inFlight
+    ? "connecting"
+    : connectionsPending
+      ? "pending"
+      : serverStatus;
 
   // Primary label is the provider/integration name (stable, recognizable).
   // The user-chosen connection nickname renders as subtext below, only when
@@ -247,6 +258,20 @@ function PrimaryAction({
   onCancelInFlight: () => void;
 }): React.ReactElement {
   switch (status) {
+    case "pending":
+      // Connections list still loading server-side (Composio fan-out).
+      // Disabled CTA with a spinner. Clicking is a no-op until we know
+      // whether to call connect() or open the manage popup.
+      return (
+        <button
+          className="vendo-connect-card__cta vendo-connect-card__cta--pending"
+          disabled
+          aria-busy="true"
+          aria-label="Loading connection state"
+        >
+          <Spinner />
+        </button>
+      );
     case "available":
       return (
         <button className="vendo-connect-card__cta" onClick={onConnect}>
@@ -338,13 +363,25 @@ function safeOrigin(url: string): string | null {
 function Logo({ url, alt }: { url: string; alt: string }): React.ReactElement {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-  // Reset state when the URL changes (e.g. theme switch swaps the simple-icons
-  // color). Without this the cached `loaded=true` keeps the old src visible
-  // until the new image swaps in, and `errored` from one URL persists.
+  const imgRef = useRef<HTMLImageElement | null>(null);
+
+  // A cached <img> resolves its native `load` event *before* React attaches
+  // the onLoad handler, so `onLoad` never fires and the image stays at
+  // opacity:0 forever (visible only when the user drags it, which is the
+  // browser's drag-preview). Check `complete` after attach as a backstop.
+  // Also resets state when the URL changes (e.g. theme switch) — without
+  // the reset the previous `loaded=true` keeps the old src visible until
+  // the new image swaps in.
   useEffect(() => {
     setLoaded(false);
     setErrored(false);
+    const img = imgRef.current;
+    if (img && img.complete) {
+      if (img.naturalWidth > 0) setLoaded(true);
+      else setErrored(true);
+    }
   }, [url]);
+
   return (
     <div className="vendo-connect-card__logo-wrap" aria-hidden={errored}>
       {!loaded && !errored ? (
@@ -352,6 +389,7 @@ function Logo({ url, alt }: { url: string; alt: string }): React.ReactElement {
       ) : null}
       {!errored ? (
         <img
+          ref={imgRef}
           src={url}
           alt={alt}
           className="vendo-connect-card__logo"
