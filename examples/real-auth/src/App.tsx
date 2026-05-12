@@ -7,14 +7,7 @@ import {
   type Theme,
   type ConnectPortalClient,
 } from "@vendodev/connect-portal";
-
-// NOTE: The `@vendodev/sdk` main entry re-exports the reconciler module at the
-// top level, which imports node:url + node:path unconditionally. Vite
-// externalizes those, leaving `fileURLToPath` undefined at runtime — the
-// playground crashes on load with `(0, import_url.fileURLToPath) is not a
-// function`. Until the SDK splits the reconciler into a separate subpath
-// export, we satisfy ConnectPortalClient directly here. All the shape we need
-// is HTTP + a connectUrl builder, and the wire formats are documented.
+import { Vendo, connectUrl } from "@vendodev/sdk";
 
 const apiKey = import.meta.env.VITE_VENDO_API_KEY;
 // API calls use the dev server's own origin so vite's /api proxy picks them up
@@ -31,62 +24,23 @@ export function App(): React.ReactElement {
     return <SetupNotice />;
   }
 
-  // Hand-rolled ConnectPortalClient. The surface is small enough (4 reads +
-  // connectUrl) that bypassing the Vendo class is straightforward and avoids
-  // the reconciler import bug described above.
   const client = useMemo<ConnectPortalClient>(() => {
-    const f = makeFetch(window.location.search);
-    const headers = { Authorization: `Bearer ${apiKey}`, "Vendo-API-Version": "2026-05-02" };
-    async function getJson<T>(path: string): Promise<T> {
-      const res = await f(`${apiBaseUrl}${path}`, { headers });
-      if (!res.ok) throw new Error(`${res.status} on ${path}`);
-      return (await res.json()) as T;
-    }
-    const conns = {
-      async list() {
-        const body = await getJson<{ connections?: unknown[] }>(
-          "/api/deployments/me/connections",
-        );
-        // The SDK normally camelCases the wire format; for the playground the
-        // raw shape is fine — the portal's Connection.slug/status/id are the
-        // only fields the UI reads.
-        return ((body.connections ?? []) as Array<Record<string, unknown>>).map(camelize) as ReturnType<typeof camelize>[] as never;
-      },
-      async get(slug: string) {
-        const all = await conns.list();
-        return (all as unknown as Array<{ slug: string }>).find((c) => c.slug === slug) as never;
-      },
-    };
-    const integ = {
-      async list() {
-        const body = await getJson<{ integrations?: unknown[] }>("/api/integrations");
-        return ((body.integrations ?? []) as Array<Record<string, unknown>>).map(camelize) as never;
-      },
-      async get(slug: string) {
-        const all = await integ.list();
-        return (all as unknown as Array<{ slug: string }>).find((i) => i.slug === slug) as never;
-      },
-    };
-    const billing = {
-      async balance() {
-        return (await getJson<unknown>("/api/billing/balance")) as never;
-      },
-      async spendCaps() {
-        return (await getJson<unknown>("/api/billing/spend-caps")) as never;
-      },
-    };
+    const vendo = new Vendo({
+      apiKey,
+      baseUrl: apiBaseUrl,
+      fetch: slowFetch(window.location.search),
+    });
     return {
       apiKey,
       baseUrl: apiBaseUrl,
-      connections: conns,
-      integrations: integ,
-      billing,
-      connectUrl: (slug: string, opts?: { returnTo?: string; state?: string }) => {
-        const params = new URLSearchParams({ app_key: apiKey });
-        if (opts?.returnTo) params.set("return_to", opts.returnTo);
-        if (opts?.state) params.set("state", opts.state);
-        return `${popupHost}/connections/connect/${slug}?${params.toString()}`;
-      },
+      connections: vendo.connections,
+      integrations: vendo.integrations,
+      billing: vendo.billing,
+      // Popup URLs must hit the real Vendo host for session cookies, so build
+      // them with the standalone helper against popupHost instead of the
+      // instance method (which would use apiBaseUrl).
+      connectUrl: (slug, opts) =>
+        connectUrl(slug, { apiKey, baseUrl: popupHost, ...opts }),
     };
   }, []);
 
@@ -230,11 +184,12 @@ function themeMuted(theme: Theme): string {
   return theme === "dark" || theme === "glass-dark" ? "#C1B7AB" : "#6B6B65";
 }
 
-function makeFetch(search: string): typeof fetch {
-  const params = new URLSearchParams(search);
-  const slowMs = parseInt(params.get("slow") ?? "0", 10);
+// Optional `?slow=NNN` query param injects an artificial delay before every
+// HTTP call — handy for stress-testing skeleton states in this playground.
+function slowFetch(search: string): typeof fetch | undefined {
+  const slowMs = parseInt(new URLSearchParams(search).get("slow") ?? "0", 10);
+  if (!slowMs || Number.isNaN(slowMs)) return undefined;
   const base = window.fetch.bind(window);
-  if (!slowMs || Number.isNaN(slowMs)) return base;
   return (input, init) =>
     new Promise((resolve, reject) =>
       setTimeout(() => base(input, init).then(resolve, reject), slowMs),
@@ -309,14 +264,3 @@ const styles = {
   } satisfies React.CSSProperties,
 };
 
-// Convert a snake_case wire object to camelCase shallowly. The portal only
-// reads top-level fields (slug, status, displayName, logoUrl, brandColor,
-// etc.) so a shallow pass is enough.
-function camelize(obj: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(obj)) {
-    const ck = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-    out[ck] = v;
-  }
-  return out;
-}
