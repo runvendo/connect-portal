@@ -156,6 +156,14 @@ export function ConnectPortal({
   // sortSlugs and matchesSearch are closures defined inside the memo so the
   // deps array only needs to list the values they actually close over.
   const lc = search.toLowerCase();
+
+  // Flat mode: the "All" view (no active category, no search filter applied
+  // to scope by category) renders a single ungrouped grid sorted globally
+  // — non-available statuses first, then featured, then alphabetical. The
+  // per-category sections only show up when a specific category pill is
+  // active, so the user gets one screen of every integration when browsing.
+  const flatMode = activeCategory === null;
+
   const visibleGroups = useMemo(() => {
     function matchesSearch(slug: string): boolean {
       if (!lc) return true;
@@ -190,6 +198,13 @@ export function ConnectPortal({
       });
     }
 
+    if (flatMode) {
+      // Collapse every allowed category into one flat sorted list.
+      const all = categoryKeys.flatMap((cat) => grouped.get(cat) ?? []);
+      const slugs = sortSlugs(all.filter(matchesSearch));
+      return slugs.length > 0 ? [{ cat: "__all__", slugs }] : [];
+    }
+
     return categoryKeys
       .map((cat) => {
         const slugs = sortSlugs(
@@ -198,7 +213,7 @@ export function ConnectPortal({
         return { cat, slugs };
       })
       .filter(({ slugs }) => slugs.length > 0);
-  }, [categoryKeys, grouped, lc, slugsFromCatalog, connectionBySlug]);
+  }, [categoryKeys, grouped, lc, slugsFromCatalog, connectionBySlug, flatMode]);
 
   const isEmpty = visibleGroups.length === 0 && lc.length > 0;
 
@@ -331,7 +346,9 @@ export function ConnectPortal({
           const hiddenCount = slugs.length - visibleSlugs.length;
           return (
             <section key={cat} className="vendo-portal__group">
-              <h3 className="vendo-portal__group-title">{titleCase(cat)}</h3>
+              {flatMode ? null : (
+                <h3 className="vendo-portal__group-title">{titleCase(cat)}</h3>
+              )}
               <ul className="vendo-portal__cards" role="list">
                 {visibleSlugs.map((slug) => (
                   <li key={slug}>
@@ -358,7 +375,7 @@ export function ConnectPortal({
                     })
                   }
                 >
-                  Show all {slugs.length} {titleCase(cat).toLowerCase()}
+                  Show all {slugs.length} {flatMode ? "integrations" : titleCase(cat).toLowerCase()}
                 </button>
               ) : expandedCategories.has(cat) && pageSize > 0 && slugs.length > pageSize ? (
                 <button
